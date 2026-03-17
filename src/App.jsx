@@ -56,17 +56,32 @@ function App() {
           <div style={{textAlign: 'center', padding: '4rem', color: 'var(--primary)'}}>Iniciando sincronización con el Nexo...</div>
         ) : (
           <div className="discovery-grid">
-            {filteredDiscoveries.map(item => (
-              <div key={item.id} className="card">
-                <span className="category-badge">{item.category}</span>
-                <h3>{item.name}</h3>
-                <p>{item.description}</p>
-                <div className="card-footer">
-                  <span className="subcategory">{item.subcategory}</span>
-                  <button className="btn-action">Explorar</button>
+            {filteredDiscoveries.map(item => {
+              const catClass = item.category?.toLowerCase() || 'default';
+              return (
+                <div key={item.id} className={`card ${catClass}`}>
+                  <span className="category-badge">{item.category}</span>
+                  <h3>{item.name}</h3>
+                  <p>{item.description}</p>
+                  
+                  {item.metadata && (
+                    <div className="card-metadata">
+                      {Object.entries(item.metadata).map(([key, val]) => (
+                        <div key={key} className="meta-item">
+                          <span className="meta-key">{key}</span>
+                          <span className="meta-val">{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="card-footer">
+                    <span className="subcategory">{item.subcategory}</span>
+                    <button className="btn-action">Explorar</button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
