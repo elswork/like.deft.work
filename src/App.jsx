@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { db } from './firebase'
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'
 import './index.css'
+import DiscoveryForm from './components/DiscoveryForm'
 
 function useDiscoveries() {
   const [data, setData] = useState([]);
@@ -39,6 +40,8 @@ function App() {
         <p className="subtitle">La cámara de descubrimientos premium de la Nación Digital</p>
       </header>
 
+      <DiscoveryForm categories={categories} />
+
       <div className="category-filter">
         {categories.map(cat => (
           <button 
@@ -59,8 +62,9 @@ function App() {
             {filteredDiscoveries.map(item => {
               const catClass = item.category?.toLowerCase() || 'default';
               return (
-                <div key={item.id} className={`card ${catClass}`}>
+                <div key={item.id} className={`card ${catClass} ${item.status === 'pending_bot' ? 'pending' : ''}`}>
                   <span className="category-badge">{item.category}</span>
+                  {item.status === 'pending_bot' && <div className="bot-processing-glow">Analizando...</div>}
                   <h3>{item.name}</h3>
                   <p>{item.description}</p>
                   
@@ -77,7 +81,9 @@ function App() {
 
                   <div className="card-footer">
                     <span className="subcategory">{item.subcategory}</span>
-                    <button className="btn-action">Explorar</button>
+                    <button className="btn-action" disabled={item.status === 'pending_bot'}>
+                      {item.status === 'pending_bot' ? 'Procesando...' : 'Explorar'}
+                    </button>
                   </div>
                 </div>
               );

@@ -3,10 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Reglas para la colección universal de descubrimientos
     match /discoveries/{discoveryId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (resource.data.ownerId == request.auth.uid || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']));
-      allow delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+      allow read, write: if true;
     }
 
     // Reglas para perfiles de usuario
