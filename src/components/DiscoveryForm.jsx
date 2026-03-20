@@ -3,29 +3,46 @@ import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function DiscoveryForm({ categories }) {
-  const [categoryInput, setCategoryInput] = useState('');
   const [discoveryInput, setDiscoveryInput] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestedCategory, setSuggestedCategory] = useState('');
   const [isBotThinking, setIsBotThinking] = useState(false);
+  const [isInferring, setIsInferring] = useState(false);
 
-  const filteredCategories = categories.filter(c => 
-    c.toLowerCase().includes(categoryInput.toLowerCase()) && c !== 'All'
-  );
+  // Debounced Inference
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (discoveryInput.length > 3 && !discoveryInput.startsWith('http')) {
+        setIsInferring(true);
+        try {
+          const res = await fetch(`http://localhost:5001/enrich?category=${encodeURIComponent(discoveryInput)}`);
+          const data = await res.json();
+          if (data.suggestedCategory) {
+            setSuggestedCategory(data.suggestedCategory);
+          }
+        } catch (err) {
+          console.error("Inference Error:", err);
+        } finally {
+          setIsInferring(false);
+        }
+      } else {
+        setSuggestedCategory('');
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [discoveryInput]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!categoryInput || !discoveryInput) return;
+    if (!discoveryInput) return;
 
     setIsBotThinking(true);
-    
-    // Simulación de "Bot Intelligence" para el MVP
-    // En una fase real, esto dispararía una Cloud Function o un Agente
     const isUrl = discoveryInput.startsWith('http');
     
     try {
       await addDoc(collection(db, "discoveries"), {
         name: isUrl ? "Enriqueciendo..." : discoveryInput,
-        category: categoryInput,
+        category: suggestedCategory || (isUrl ? "Analizando..." : "General"),
         description: isUrl ? `Analizando recurso en ${discoveryInput}...` : "Pendiente de descripción por el Bot.",
         subcategory: "Nuevo",
         metadata: isUrl ? { url: discoveryInput } : {},
@@ -34,8 +51,8 @@ export default function DiscoveryForm({ categories }) {
         createdAt: serverTimestamp()
       });
 
-      setCategoryInput('');
       setDiscoveryInput('');
+      setSuggestedCategory('');
       setIsBotThinking(false);
     } catch (err) {
       console.error("Error al insertar:", err);
@@ -45,59 +62,32 @@ export default function DiscoveryForm({ categories }) {
 
   return (
     <form className="discovery-form" onSubmit={handleSubmit}>
-      <div className="input-group">
-        <label>1. Pasión / Categoría</label>
-        <input 
-          type="text" 
-          className="smart-input"
-          placeholder="Escribe una categoría (ej: Motor, Cine...)"
-          value={categoryInput}
-          onChange={(e) => {
-            setCategoryInput(e.target.value);
-            setShowSuggestions(true);
-          }}
-          onFocus={() => setShowSuggestions(true)}
-        />
-        {showSuggestions && categoryInput && (
-          <div className="autocomplete-list">
-            {filteredCategories.map(cat => (
-              <div 
-                key={cat} 
-                className="suggestion-item"
-                onClick={() => {
-                  setCategoryInput(cat);
-                  setShowSuggestions(false);
-                }}
-              >
-                {cat}
-              </div>
-            ))}
-            {!categories.includes(categoryInput) && (
-              <div className="suggestion-item" onClick={() => setShowSuggestions(false)}>
-                Crear: <strong>{categoryInput}</strong> <span className="new-category-tag">NUEVA</span>
-              </div>
-            )}
+      <div className="input-group full-width">
+        <label>Integrar en el Nexo (Nombre o URL)</label>
+        <div className="smart-input-container">
+          <input 
+            type="text" 
+            className="smart-input unified"
+            placeholder="Pega una URL o escribe algo (ej: Porsche 911)..."
+            value={discoveryInput}
+            onChange={(e) => setDiscoveryInput(e.target.value)}
+          />
+          {isInferring && <div className="spinner-small"></div>}
+        </div>
+        
+        {suggestedCategory && (
+          <div className="suggestion-badge">
+            Sugerencia: <span className="category-chip">{suggestedCategory}</span>
           </div>
         )}
       </div>
 
-      <div className="input-group">
-        <label>2. El Descubrimiento (Nombre o URL)</label>
-        <input 
-          type="text" 
-          className="smart-input"
-          placeholder="Pega una URL o escribe un nombre..."
-          value={discoveryInput}
-          onChange={(e) => setDiscoveryInput(e.target.value)}
-        />
-      </div>
-
-      <button type="submit" className="btn-submit" disabled={isBotThinking}>
-        {isBotThinking ? "Solicitando intervención al Bot..." : "Integrar en el Nexo"}
+      <button type="submit" className="btn-submit premium" disabled={isBotThinking || !discoveryInput}>
+        {isBotThinking ? "Sincronizando..." : "Consumar Descubrimiento"}
       </button>
 
       {isBotThinking && (
-        <div className="bot-status">El Bot está escaneando la red en busca de detalles...</div>
+        <div className="bot-status pulse">El Nexo está asimilando la nueva información...</div>
       )}
     </form>
   );

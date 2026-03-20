@@ -71,10 +71,36 @@ def enrich():
 
         categories = [c.get("title", "").replace("Categoría:", "").replace("Category:", "") for c in page.get("categories", [])]
         
+        # Lógica de Inferido Táctico para el Nexo
+        suggested_category = "General"
+        taxonomy_mapping = {
+            "Motor": ["Automóvil", "Coche", "Vehículo", "Motor", "Car", "Engine", "Fórmula 1", "Automotive"],
+            "Cine": ["Cine", "Película", "Film", "Director", "Actor", "Productora", "Cinema"],
+            "Música": ["Música", "Cantante", "Álbum", "Banda", "Music", "Singer", "Band", "Composer"],
+            "Tecnología": ["Informática", "Software", "Hardware", "Internet", "Tecnología", "Technology", "Computing"],
+            "Ciencia": ["Ciencia", "Física", "Química", "Biología", "Espacio", "Science", "Physics", "Chemistry"],
+            "Arte": ["Arte", "Pintura", "Escultura", "Museo", "Art", "Painting", "Sculpture"],
+            "Historia": ["Historia", "Siglo", "Guerra", "Reino", "History", "Century", "Empire"],
+            "Geografía": ["Ciudad", "País", "Continente", "Población", "Geography", "City", "Country"],
+            "Videojuegos": ["Videojuego", "Consola", "Game", "Nintendo", "PlayStation", "Xbox"],
+            "Literatura": ["Libro", "Escritor", "Novela", "Poesía", "Literature", "Book", "Writer", "Novel"]
+        }
+
+        # Analizar categorías de Wikipedia para encontrar el match
+        found_match = False
+        for master, keywords in taxonomy_mapping.items():
+            for kw in keywords:
+                if any(kw.lower() in wiki_cat.lower() for wiki_cat in categories):
+                    suggested_category = master
+                    found_match = True
+                    break
+            if found_match: break
+
         return jsonify({
             "description": short_desc,
             "imageKeyword": page.get("title", category),
             "categories": categories,
+            "suggestedCategory": suggested_category,
             "source": "Wikipedia"
         })
 
