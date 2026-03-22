@@ -46,16 +46,51 @@ const EnrichmentService = {
   /**
    * Enriquece un elemento (palabra o URL).
    * @param {string} input - Palabra clave o URL del descubrimiento.
-   * @returns {Promise<Object>} - Metadatos extraídos.
+   * @returns {Promise<Object>} - Metadatos extraídos con estado.
    */
   async enrichElement(input) {
     console.log(`[EnrichmentService] Analizando elemento: ${input}`);
-    // Simulación de scraping y búsqueda semántica
+    const isUrl = input.startsWith('http');
+    
+    if (isUrl) {
+      try {
+        // En un entorno real, aquí llamaríamos a un servicio de scraping (ej: AthenaBrain)
+        // Por ahora simulamos la inferencia con un retraso
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Simulación de lógica de inferencia
+        const urlLower = input.toLowerCase();
+        let derivedCategory = "Desconocida";
+        let subcategory = "Web";
+        
+        if (urlLower.includes('wine') || urlLower.includes('vino') || urlLower.includes('vinos')) derivedCategory = "vino";
+        else if (urlLower.includes('watch') || urlLower.includes('reloj')) derivedCategory = "relojería";
+        else if (urlLower.includes('chef') || urlLower.includes('restaurante') || urlLower.includes('food')) derivedCategory = "gastro";
+        else if (urlLower.includes('car') || urlLower.includes('auto') || urlLower.includes('porsche')) derivedCategory = "motor";
+
+        const isKnown = !!ATHENA_KNOWLEDGE[derivedCategory];
+        
+        return {
+          title: `Descubrimiento en ${new URL(input).hostname}`,
+          description: isKnown 
+            ? ATHENA_KNOWLEDGE[derivedCategory].description.substring(0, 100) + "..."
+            : "Contenido analizado. Categoría emergente detectada.",
+          category: derivedCategory,
+          subcategory: subcategory,
+          image: isKnown ? ATHENA_KNOWLEDGE[derivedCategory].imageUrl : "https://placehold.co/600x400?text=Emergent+Discovery",
+          status: isKnown ? "completed" : "pending",
+          metadata: { url: input, source: "Athena Scraper" }
+        };
+      } catch (error) {
+        console.error("Scraping fail:", error);
+        return { status: "manual", error: "No se pudo extraer información automáticamente." };
+      }
+    }
+
     return {
-      title: "Resultado de Análisis",
-      description: "Información recopilada automáticamente por el sistema.",
-      visual: "https://placehold.co/600x400?text=Discovery",
-      isValidated: false
+      status: "manual",
+      title: input,
+      category: "General"
     };
   }
 };
