@@ -28,9 +28,17 @@ body {
 .app-container {
   min-height: 100vh;
   padding: 2rem;
-  background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.1), transparent),
-              radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.1), transparent);
+  transition: background 1s ease;
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent),
+              radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.5), transparent);
 }
+
+/* Vault Backgrounds */
+.vault-motor { background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent), var(--bg-dark); }
+.vault-gastro { background: radial-gradient(circle at top right, rgba(245, 158, 11, 0.15), transparent), var(--bg-dark); }
+.vault-cultura { background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent), var(--bg-dark); }
+.vault-tecnología { background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.15), transparent), var(--bg-dark); }
+.vault-all { background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent), var(--bg-dark); }
 
 header {
   margin-bottom: 4rem;
@@ -97,20 +105,45 @@ h1 {
 .discovery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-auto-rows: 20px;
   gap: 2rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
 .card {
+  grid-row: span 18; /* Default height */
   background: var(--glass);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 24px;
   padding: 1.5rem;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Relevance Scaling */
+.card.high-relevance {
+  grid-row: span 25;
+  grid-column: span 1;
+  border-width: 2px;
+  box-shadow: 0 0 30px var(--cat-glow);
+}
+
+.card.ultra-relevance {
+  grid-row: span 30;
+  grid-column: span 2;
+  border-width: 3px;
+  background: rgba(255, 255, 255, 0.05); /* Ligeramente más claro */
+}
+
+@media (max-width: 900px) {
+  .card.ultra-relevance {
+    grid-column: span 1;
+  }
 }
 
 .card:hover {

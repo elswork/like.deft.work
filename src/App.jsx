@@ -38,9 +38,18 @@ function LoveApp() {
   const [filter, setFilter] = useState('All');
 
   const categories = ['All', ...new Set(discoveries.map(item => item.category))];
-  const filteredDiscoveries = filter === 'All' 
+  
+  // Sorting: Relevance first, then Date
+  const filteredDiscoveries = (filter === 'All' 
     ? discoveries 
-    : discoveries.filter(d => d.category === filter);
+    : discoveries.filter(d => d.category === filter))
+    .sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0));
+
+  const getRelevanceClass = (score) => {
+    if (score >= 90) return 'ultra-relevance';
+    if (score >= 70) return 'high-relevance';
+    return 'normal-relevance';
+  };
 
   const handleDelete = async (id) => {
     if (!user) {
@@ -60,7 +69,7 @@ function LoveApp() {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container vault-${filter.toLowerCase()}`}>
       <header>
         <div className="header-top">
           <div className="brand">
@@ -115,7 +124,7 @@ function LoveApp() {
             {filteredDiscoveries.map(item => {
               const catClass = item.category?.toLowerCase() || 'default';
               return (
-                <div key={item.id} className={`card ${catClass} ${item.status || 'manual'}`}>
+                <div key={item.id} className={`card ${catClass} ${item.status || 'manual'} ${getRelevanceClass(item.relevance_score)}`}>
                   <div className="card-top-right">
                     {item.status === 'pending_bot' && <div className="bot-processing-glow">Analizando...</div>}
                     <div className="status-indicator">
