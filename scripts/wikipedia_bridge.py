@@ -1,9 +1,77 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
+import trafilatura
+import json
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 CORS(app)
+
+@app.route('/scrape', methods=['GET'])
+def scrape():
+    url = request.args.get('url')
+    if not url:
+        return jsonify({"error": "No URL provided"}), 400
+
+    print(f"[AthenaBridge] Raspando URL: {url}")
+    
+    try:
+        downloaded = trafilatura.fetch_url(url)
+        if not downloaded:
+            return jsonify({"error": "No se pudo descargar el contenido de la URL"}), 500
+
+        # Extraer metadatos
+        metadata = trafilatura.extract_metadata(downloaded)
+        # Extraer contenido principal
+        content = trafilatura.extract(downloaded, include_comments=False, include_tables=True, no_fallback=False)
+
+        # Determinar título (prioridad metadatos -> trafilatura -> hostname)
+        title = "Descubrimiento en la Red"
+        if metadata and metadata.title:
+            title = metadata.title
+        
+        description = "Sin descripción detectada."
+        if metadata and metadata.description:
+            description = metadata.description
+        elif content:
+            description = " ".join(content.split()[:40]) + "..."
+
+        image = "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=2232&auto=format&fit=crop"
+        if metadata and metadata.image:
+             image = metadata.image
+        
+        # Inferencia de Categoría básica (mejorable en Fase V)
+        category = "General"
+        url_lower = url.lower()
+        if any(kw in url_lower for kw in ['wine', 'vino', 'enology']): category = "Gastronomía"
+        elif any(kw in url_lower for kw in ['watch', 'reloj', 'horologe']): category = "Relojería"
+        elif any(kw in url_lower for kw in ['car', 'motor', 'porsche', 'ferrari']): category = "Motor"
+        elif any(kw in url_lower for kw in ['art', 'museum', 'exhibition']): category = "Arte"
+        elif any(kw in url_lower for kw in ['ai', 'intelligence', 'software', 'dev']): category = "Tecnología"
+
+        return jsonify({
+            "title": title,
+            "description": description,
+            "image": image,
+            "category": category,
+            "subcategory": "Web Scraping",
+            "status": "completed" if category != "General" else "pending",
+            "metadata": {
+                "author": metadata.author if metadata else None,
+                "date": metadata.date if metadata else None,
+                "hostname": urlparse(url).hostname,
+                "scraper": "Trafilatura/Athena"
+            }
+        })
+
+    except Exception as e:
+        print(f"Scraping error: {e}")
+        return jsonify({
+            "status": "manual",
+            "error": str(e),
+            "title": urlparse(url).hostname
+        }), 200
 
 @app.route('/enrich', methods=['GET'])
 def enrich():
