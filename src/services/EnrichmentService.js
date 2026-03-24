@@ -67,6 +67,7 @@ const EnrichmentService = {
           subcategory: data.subcategory,
           image: data.image,
           status: data.status,
+          relevance_score: data.status === 'completed' ? 75 : 40, // Sugerencia inicial
           metadata: { ...data.metadata, url: input }
         };
       } catch (error) {

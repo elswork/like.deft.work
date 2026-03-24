@@ -38,6 +38,13 @@ export default function DiscoveryForm({ categories }) {
       setState('manual');
     } else {
       setEnrichedData(result);
+      setManualData({
+        ...manualData,
+        title: result.title,
+        category: result.category,
+        description: result.description,
+        relevance_score: result.relevance_score
+      });
       setState('preview');
     }
   };
@@ -87,7 +94,7 @@ export default function DiscoveryForm({ categories }) {
                     subcategory: enrichedData.subcategory,
                     description: enrichedData.description,
                     status: enrichedData.status,
-                    relevance_score: enrichedData.relevance_score || 70,
+                    relevance_score: manualData.relevance_score || enrichedData.relevance_score || 70,
                     metadata: enrichedData.metadata,
                     image: enrichedData.image
                   })}>
