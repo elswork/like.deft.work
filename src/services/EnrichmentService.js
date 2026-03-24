@@ -54,36 +54,28 @@ const EnrichmentService = {
     
     if (isUrl) {
       try {
-        // En un entorno real, aquí llamaríamos a un servicio de scraping (ej: AthenaBrain)
-        // Por ahora simulamos la inferencia con un retraso
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Simulación de lógica de inferencia
-        const urlLower = input.toLowerCase();
-        let derivedCategory = "Desconocida";
-        let subcategory = "Web";
-        
-        if (urlLower.includes('wine') || urlLower.includes('vino') || urlLower.includes('vinos')) derivedCategory = "vino";
-        else if (urlLower.includes('watch') || urlLower.includes('reloj')) derivedCategory = "relojería";
-        else if (urlLower.includes('chef') || urlLower.includes('restaurante') || urlLower.includes('food')) derivedCategory = "gastro";
-        else if (urlLower.includes('car') || urlLower.includes('auto') || urlLower.includes('porsche')) derivedCategory = "motor";
+        console.log(`[EnrichmentService] Invocando Athena Scraper para: ${input}`);
+        const response = await fetch(`http://localhost:5001/scrape?url=${encodeURIComponent(input)}`);
+        const data = await response.json();
 
-        const isKnown = !!ATHENA_KNOWLEDGE[derivedCategory];
-        
+        if (data.error) throw new Error(data.error);
+
         return {
-          title: `Descubrimiento en ${new URL(input).hostname}`,
-          description: isKnown 
-            ? ATHENA_KNOWLEDGE[derivedCategory].description.substring(0, 100) + "..."
-            : "Contenido analizado. Categoría emergente detectada.",
-          category: derivedCategory,
-          subcategory: subcategory,
-          image: isKnown ? ATHENA_KNOWLEDGE[derivedCategory].imageUrl : "https://placehold.co/600x400?text=Emergent+Discovery",
-          status: isKnown ? "completed" : "pending",
-          metadata: { url: input, source: "Athena Scraper" }
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          subcategory: data.subcategory,
+          image: data.image,
+          status: data.status,
+          metadata: { ...data.metadata, url: input }
         };
       } catch (error) {
         console.error("Scraping fail:", error);
-        return { status: "manual", error: "No se pudo extraer información automáticamente." };
+        return { 
+          status: "manual", 
+          error: "El Oráculo no pudo extraer metadatos. Procediendo a inserción manual.",
+          title: new URL(input).hostname
+        };
       }
     }
 
